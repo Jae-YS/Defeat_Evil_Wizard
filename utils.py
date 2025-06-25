@@ -7,6 +7,9 @@ def create_character():
         print("1. Warrior\n2. Mage\n3. Archer\n4. Assassin\n5. Exit")
         try:
             choice = int(input("Enter number: ").strip())
+            if choice == 5:
+                print("Exiting game. Goodbye!")
+                exit()
             name = input("Enter your name: ")
         except TypeError:
             print("Invalid input. Please enter a number corresponding to your choice.")
@@ -26,9 +29,6 @@ def create_character():
                 return Archer(name)
             elif choice == 4:
                 return Assassin(name)
-            elif choice == 5:
-                print("Exiting game. Goodbye!")
-                exit()
             else:
                 print("Invalid choice. Defaulting to Warrior.")
                 return Warrior(name)

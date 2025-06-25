@@ -22,6 +22,9 @@ class Character:
         self.name = name
         self.health = health
         self.attack_power = attack_power
+        self.cached_attack_roll = (
+            None  # Cache for attack roll to ensure consistency in multi-hit scenarios
+        )
         self.defense = defense
         self.evasion_chance = evasion_chance
         self.max_health = health
@@ -44,12 +47,17 @@ class Character:
 
     def get_effective_attack(self):
         """Return attack power after accounting for buffs/debuffs."""
-        atk = self.attack_power
+        base = self.attack_power
+        if self.cached_attack_roll is None:
+            self.cached_attack_roll = random.randint(base, base + 5)
+
+        atk = self.cached_attack_roll
+
         if self.status_effects["empowered"][1] > 0:
             atk += self.status_effects["empowered"][0]
         if self.status_effects["weakened"][1] > 0:
             atk -= self.status_effects["weakened"][0]
-        return max(0, atk)
+        return max(1, atk)
 
     def get_effective_defense(self):
         """Return defense after buffs/debuffs like shield or vulnerability."""
@@ -78,12 +86,13 @@ class Character:
         """
         if random.random() < opponent.get_effective_evasion():
             print(f"{opponent.name} evaded the attack!")
+            self.cached_attack_roll = None  # Reset cached roll after attack
             return
 
-        damage = max(0, self.get_effective_attack() - opponent.get_effective_defense())
+        damage = max(1, self.get_effective_attack() - opponent.get_effective_defense())
         opponent.health -= damage
         print(f"{self.name} attacks {opponent.name} for {damage} damage!")
-
+        self.cached_attack_roll = None
         if opponent.health <= 0:
             print(f"{opponent.name} has been defeated!")
 
@@ -114,9 +123,6 @@ class Character:
             self.cooldowns[ability_name] = cd
             return True
 
-        print(
-            f"{self.name}'s {ability_name.replace('_', ' ').title()} is on cooldown for {self.cooldowns[ability_name]} more turn(s)."
-        )
         return False
 
     def special(self, index, target):
@@ -128,11 +134,11 @@ class Character:
             target (Character): The opponent or target of the ability.
         """
         abilities = list(self.abilities.keys())
-        if not 1 <= index <= len(abilities):
+        if not 0 <= index < len(abilities):
             print("Invalid ability choice.")
             return
 
-        ability = abilities[index - 1]
+        ability = abilities[index]
         if not self.use_ability(ability):
             return
 
@@ -155,17 +161,23 @@ class Character:
 
     def update(self):
         """
-        Decrement status durations and cooldowns. Should be called each turn.
+        Decrement status effect durations and cooldowns. Should be called at the END of the character's turn.
         """
-        for k, v in self.status_effects.items():
-            if isinstance(v, tuple):
-                if v[1] > 0:
-                    self.status_effects[k] = (v[0], v[1] - 1)
-                elif v[1] == 0:
-                    self.status_effects[k] = (0, 0)
-            elif isinstance(v, int) and v > 0:
-                self.status_effects[k] -= 1
+        # Tick down status effects
 
+        for k, v in self.status_effects.items():
+
+            if isinstance(v, tuple):
+                value, duration = v
+                if duration > 0:
+                    self.status_effects[k] = (value, duration - 1)
+            elif isinstance(v, int):
+                if v > 0:
+                    self.status_effects[k] -= 1
+                if self.status_effects[k] <= 0:
+                    self.status_effects[k] = 0
+
+        # Tick down cooldowns
         for k in self.cooldowns:
             if self.cooldowns[k] > 0:
                 self.cooldowns[k] -= 1
@@ -175,18 +187,37 @@ class Character:
         Print current stats and active status effects.
         """
         print(f"{self.name}'s Stats\n" + "-" * 40)
-        atk = self.get_effective_attack()
-        defn = self.get_effective_defense()
-        eva = self.get_effective_evasion()
+
+        if self.cached_attack_roll is None:
+            self.cached_attack_roll = random.randint(
+                self.attack_power, self.attack_power + 5
+            )
+        rolled_attack = self.cached_attack_roll
+
+        empowered = (
+            self.status_effects["empowered"][0]
+            if self.status_effects["empowered"][1] > 0
+            else 0
+        )
+        weakened = (
+            self.status_effects["weakened"][0]
+            if self.status_effects["weakened"][1] > 0
+            else 0
+        )
+        net_modifier = empowered - weakened
+
+        effective_defense = self.get_effective_defense()
+        def_mod = effective_defense - self.defense
+        evasion = self.get_effective_evasion()
 
         print(f"Health       : {self.health}/{self.max_health}")
         print(
-            f"Attack Power : {atk} ({'+' if atk > self.attack_power else ''}{atk - self.attack_power})"
+            f"Attack Power : {rolled_attack} ({'+' if net_modifier >= 0 else ''}{net_modifier})"
         )
         print(
-            f"Defense      : {defn} ({'+' if defn > self.defense else ''}{defn - self.defense})"
+            f"Defense      : {effective_defense} ({'+' if def_mod >= 0 else ''}{def_mod})"
         )
-        print(f"Evasion      : {eva * 100:.0f}%")
+        print(f"Evasion      : {evasion * 100:.0f}%")
 
         print("\nActive Status Effects:")
         has_status = False

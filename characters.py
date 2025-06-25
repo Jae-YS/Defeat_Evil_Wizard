@@ -34,9 +34,9 @@ class Warrior(Character):
         """
         Special: Stuns the enemy for 1 turn. Has a 3-turn cooldown.
         """
-        if self.use_ability("shield_bash"):
-            opponent.status_effects["stunned"] = 1
-            print(f"{self.name} uses Shield Bash on {opponent.name}, stunning them!")
+
+        opponent.status_effects["stunned"] = 1
+        print(f"{self.name} uses Shield Bash on {opponent.name}, stunning them!")
 
     def berserker_rage(self):
         """
@@ -80,12 +80,10 @@ class Mage(Character):
         """
         Special: Deals 50 flat magic damage. Ignores defense.
         """
-        if self.use_ability("arcane_surge"):
-            damage = 50
-            opponent.health -= damage
-            print(
-                f"{self.name} casts Arcane Surge on {opponent.name} for {damage} damage!"
-            )
+
+        damage = 50
+        opponent.health -= damage
+        print(f"{self.name} casts Arcane Surge on {opponent.name} for {damage} damage!")
 
     def random_spell(self, opponent):
         """
@@ -95,27 +93,27 @@ class Mage(Character):
         - Boost Attack
         - Boost Defense
         """
-        if self.use_ability("random_spell"):
-            spells = ["Teleport", "Ice Shard", "Boost Attack", "Boost Defense"]
-            spell = random.choice(spells)
-            print(f"{self.name} casts {spell}!")
 
-            if spell == "Teleport":
-                self.status_effects["evade_boost"] = (1, 2)
-                print(f"{self.name} teleports! +100% evasion for 2 turns.")
-            elif spell == "Ice Shard":
-                damage = 20
-                opponent.status_effects["slowed"] = (0, 3)
-                opponent.health -= damage
-                print(
-                    f"{self.name} hits {opponent.name} with Ice Shard for {damage} damage. Target is slowed for 3 turns."
-                )
-            elif spell == "Boost Attack":
-                self.status_effects["empowered"] = (7, 1)
-                print(f"{self.name}'s attack power is boosted by 7 for 1 turn!")
-            elif spell == "Boost Defense":
-                self.status_effects["shielded"] = (5, 1)
-                print(f"{self.name}'s defense increases by 5 for 1 turn!")
+        spells = ["Teleport", "Ice Shard", "Boost Attack", "Boost Defense"]
+        spell = random.choice(spells)
+        print(f"{self.name} casts {spell}!")
+
+        if spell == "Teleport":
+            self.status_effects["evade_boost"] = (1, 3)
+            print(f"{self.name} teleports! +100% evasion for 2 turns.")
+        elif spell == "Ice Shard":
+            damage = 20
+            opponent.status_effects["slowed"] = (0, 4)
+            opponent.health -= damage
+            print(
+                f"{self.name} hits {opponent.name} with Ice Shard for {damage} damage. Target is slowed for 3 turns."
+            )
+        elif spell == "Boost Attack":
+            self.status_effects["empowered"] = (7, 2)
+            print(f"{self.name}'s attack power is boosted by 7 for 1 turn!")
+        elif spell == "Boost Defense":
+            self.status_effects["shielded"] = (5, 2)
+            print(f"{self.name}'s defense increases by 5 for 1 turn!")
 
 
 class Archer(Character):
@@ -138,25 +136,25 @@ class Archer(Character):
         Special: Hits 3-5 times at half power each hit.
         Good against low-defense targets.
         """
-        if self.use_ability("multi_shot"):
-            hits = random.randint(3, 5)
-            damage_per_hit = self.attack_power // 2
-            total_damage = hits * damage_per_hit
-            opponent.health -= total_damage
-            print(
-                f"{self.name} uses Multi-Shot on {opponent.name}, hitting {hits} times for a total of {total_damage} damage!"
-            )
+
+        hits = random.randint(3, 5)
+        damage_per_hit = self.attack_power // 2
+        total_damage = hits * damage_per_hit
+        opponent.health -= total_damage
+        print(
+            f"{self.name} uses Multi-Shot on {opponent.name}, hitting {hits} times for a total of {total_damage} damage!"
+        )
 
     def headshot(self, opponent=None):
         """
         Special: Buffs next attack to deal double damage.
         Uses 'empowered' status effect.
         """
-        if self.use_ability("headshot"):
-            self.status_effects["empowered"] = (self.attack_power, 1)
-            print(
-                f"{self.name} is lining up a Headshot! Next attack will deal double damage."
-            )
+
+        self.status_effects["empowered"] = (self.attack_power, 2)
+        print(
+            f"{self.name} is lining up a Headshot! Next attack will deal double damage."
+        )
 
 
 class Assassin(Character):
@@ -181,18 +179,18 @@ class Assassin(Character):
         """
         Special: Empowers next attack (1.5x) and disables enemy evasion for 1 turn.
         """
-        if self.use_ability("shadow_step"):
-            self.status_effects["empowered"] = (self.attack_power * 0.5, 1)
-            opponent.status_effects["evade_boost"] = (0, 1)  # Removes evasion
-            print(
-                f"{self.name} uses Shadow Step! Next attack is empowered and unavoidable."
-            )
+
+        self.status_effects["empowered"] = (self.attack_power * 0.5, 2)
+        opponent.status_effects["evade_boost"] = (0, 2)  # Removes evasion
+        print(
+            f"{self.name} uses Shadow Step! Next attack is empowered and unavoidable."
+        )
 
     def smoke_bomb(self, opponent=None):
         """
         Special: Greatly increases evasion for 2 turns.
         Useful defensively.
         """
-        if self.use_ability("smoke_bomb"):
-            self.status_effects["evade_boost"] = (0.75, 2)
-            print(f"{self.name} uses Smoke Bomb! Evasion increased to 75% for 2 turns.")
+
+        self.status_effects["evade_boost"] = (0.75, 3)
+        print(f"{self.name} uses Smoke Bomb! Evasion increased to 75% for 2 turns.")

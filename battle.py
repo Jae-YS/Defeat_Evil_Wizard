@@ -14,7 +14,8 @@ def battle(player, enemy):
                 print(f"{player.name} is stunned and cannot act this turn!")
             else:
                 if not handle_player_turn(player, enemy):
-                    return  # Player chose to quit
+                    return
+            player.update()
         except Exception as e:
             print(f"Something went wrong during your turn: {e}")
 
@@ -22,17 +23,15 @@ def battle(player, enemy):
 
         try:
             if enemy.health > 0:
-                handle_enemy_turn(enemy, player)
+                if enemy.status_effects.get("stunned", 0) > 0:
+                    print(f"{enemy.name} is stunned and cannot act this turn!")
+                else:
+                    handle_enemy_turn(enemy, player)
+                enemy.update()
         except Exception as e:
             print(f"Something went wrong during the enemy's turn: {e}")
 
         print("-" * 40)
-
-        try:
-            player.update()
-            enemy.update()
-        except Exception as e:
-            print(f"Error updating characters: {e}")
 
     if player.health <= 0:
         print(f"{player.name} has been defeated!")
@@ -49,7 +48,7 @@ def print_turn_header(player, enemy):
     print(f"{enemy.name}: {enemy.health} HP\n")
 
 
-def get_player_action(player):
+def get_player_action(player, enemy):
     """
     Display the action menu and return the player's chosen action.
 
@@ -58,6 +57,7 @@ def get_player_action(player):
     """
     menu = [
         ("View stats", "view_stats"),
+        ("View enemy stats", "view_enemy_stats"),
         ("View special abilities", "view_special_abilities"),
         ("Attack", "attack"),
         ("Special", "special"),
@@ -80,6 +80,8 @@ def get_player_action(player):
                 # Handle preview-only options immediately
                 if action == "view_stats":
                     player.display_stats()
+                elif action == "view_enemy_stats":
+                    enemy.display_stats()
                 elif action == "view_special_abilities":
                     player.view_special_abilities()
                 else:
@@ -98,7 +100,7 @@ def handle_player_turn(player, enemy):
         bool: True to continue, False to quit battle.
     """
     while True:
-        action = get_player_action(player)
+        action = get_player_action(player, enemy)
 
         if action == "attack":
             player.attack(enemy)
@@ -118,9 +120,9 @@ def handle_player_turn(player, enemy):
                     print("Invalid input. Please enter a number.")
                     continue
 
-                ability_index = int(ability_choice)
-                if 1 <= ability_index <= len(player.abilities):
-                    ability_name = list(player.abilities.keys())[ability_index - 1]
+                ability_index = int(ability_choice) - 1
+                if 0 <= ability_index < len(player.abilities):
+                    ability_name = list(player.abilities.keys())[ability_index]
                     if player.is_ability_ready(ability_name):
                         player.special(ability_index, enemy)
                         return True

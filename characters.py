@@ -34,6 +34,8 @@ class Warrior(Character):
         """
         Special: Stuns the enemy for 1 turn. Has a 3-turn cooldown.
         """
+        if opponent.try_evade(self.name):
+            return
 
         opponent.status_effects["stunned"] = 1
         print(f"{self.name} uses Shield Bash on {opponent.name}, stunning them!")
@@ -80,6 +82,8 @@ class Mage(Character):
         """
         Special: Deals 50 flat magic damage. Ignores defense.
         """
+        if opponent.try_evade(self.name):
+            return
 
         damage = 50
         opponent.health -= damage
@@ -102,8 +106,10 @@ class Mage(Character):
             self.status_effects["evade_boost"] = (1, 3)
             print(f"{self.name} teleports! +100% evasion for 2 turns.")
         elif spell == "Ice Shard":
+            if opponent.try_evade(self.name):
+                return
             damage = 20
-            opponent.status_effects["slowed"] = (0, 4)
+            opponent.status_effects["slowed"] = (opponent.evasion_chance / 2, 4)
             opponent.health -= damage
             print(
                 f"{self.name} hits {opponent.name} with Ice Shard for {damage} damage. Target is slowed for 3 turns."
@@ -125,7 +131,7 @@ class Archer(Character):
         abilities = {
             "multi_shot": {
                 "cooldown": 3,
-                "desc": "Hits 3-5 times for half damage each.",
+                "desc": "Hits 3-5 times for a third damage each.",
             },
             "headshot": {"cooldown": 4, "desc": "Next attack deals double damage."},
         }
@@ -133,16 +139,25 @@ class Archer(Character):
 
     def multi_shot(self, opponent):
         """
-        Special: Hits 3-5 times at half power each hit.
+        Special: Hits 3-5 times at a third power each hit.
         Good against low-defense targets.
         """
 
         hits = random.randint(3, 5)
-        damage_per_hit = self.attack_power // 2
-        total_damage = hits * damage_per_hit
-        opponent.health -= total_damage
+        damage_per_hit = self.attack_power // 3
+        landed = 0
+        total_damage = 0
+
+        for _ in range(hits):
+            if opponent.try_evade(self.name):
+                continue
+            opponent.health -= damage_per_hit
+            total_damage += damage_per_hit
+            landed += 1
+
         print(
-            f"{self.name} uses Multi-Shot on {opponent.name}, hitting {hits} times for a total of {total_damage} damage!"
+            f"{self.name} uses Multi-Shot on {opponent.name}, "
+            f"attempting {hits} hits, {landed} landed for a total of {total_damage} damage!"
         )
 
     def headshot(self, opponent=None):

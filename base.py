@@ -77,6 +77,26 @@ class Character:
             eva -= self.status_effects["slowed"][0]
         return max(0.0, min(1.0, eva))  # Clamp between 0% and 100%
 
+    def try_evade(self, attacker_name=""):
+        """
+        Determines whether this character evades an incoming attack.
+
+        Args:
+            attacker_name (str): Optional name of the attacker for the log.
+
+        Returns:
+            bool: True if evaded, False if hit.
+        """
+        evade_chance = self.get_effective_evasion()
+        if random.random() < evade_chance:
+            print(
+                f"{self.name} evaded the attack!"
+                if not attacker_name
+                else f"{self.name} evaded {attacker_name}'s attack!"
+            )
+            return True
+        return False
+
     def attack(self, opponent):
         """
         Perform a normal attack. May miss if opponent evades.
@@ -84,9 +104,8 @@ class Character:
         Args:
             opponent (Character): The target of the attack.
         """
-        if random.random() < opponent.get_effective_evasion():
-            print(f"{opponent.name} evaded the attack!")
-            self.cached_attack_roll = None  # Reset cached roll after attack
+        if opponent.try_evade(self.name):
+            self.cached_attack_roll = None
             return
 
         damage = max(1, self.get_effective_attack() - opponent.get_effective_defense())
@@ -166,7 +185,6 @@ class Character:
         # Tick down status effects
 
         for k, v in self.status_effects.items():
-
             if isinstance(v, tuple):
                 value, duration = v
                 if duration > 0:
@@ -184,16 +202,19 @@ class Character:
 
     def display_stats(self):
         """
-        Print current stats and active status effects.
+        Print current stats and active status effects,
+        showing stat modifications for attack, defense, and evasion.
         """
         print(f"{self.name}'s Stats\n" + "-" * 40)
 
+        # Use cached or generate new attack roll
         if self.cached_attack_roll is None:
             self.cached_attack_roll = random.randint(
                 self.attack_power, self.attack_power + 5
             )
         rolled_attack = self.cached_attack_roll
 
+        # Compute net attack modifier
         empowered = (
             self.status_effects["empowered"][0]
             if self.status_effects["empowered"][1] > 0
@@ -204,21 +225,30 @@ class Character:
             if self.status_effects["weakened"][1] > 0
             else 0
         )
-        net_modifier = empowered - weakened
+        net_attack_mod = empowered - weakened
 
-        effective_defense = self.get_effective_defense()
-        def_mod = effective_defense - self.defense
-        evasion = self.get_effective_evasion()
+        # Defense
+        effective_def = self.get_effective_defense()
+        net_def_mod = effective_def - self.defense
 
+        # Evasion
+        effective_eva = self.get_effective_evasion()
+        net_eva_mod = effective_eva - self.evasion_chance
+        net_eva_percent = round(net_eva_mod * 100)
+
+        # Display
         print(f"Health       : {self.health}/{self.max_health}")
         print(
-            f"Attack Power : {rolled_attack} ({'+' if net_modifier >= 0 else ''}{net_modifier})"
+            f"Attack Power : {rolled_attack} ({'+' if net_attack_mod >= 0 else ''}{net_attack_mod})"
         )
         print(
-            f"Defense      : {effective_defense} ({'+' if def_mod >= 0 else ''}{def_mod})"
+            f"Defense      : {effective_def} ({'+' if net_def_mod >= 0 else ''}{net_def_mod})"
         )
-        print(f"Evasion      : {evasion * 100:.0f}%")
+        print(
+            f"Evasion      : {effective_eva * 100:.0f}% ({'+' if net_eva_percent >= 0 else ''}{net_eva_percent}%)"
+        )
 
+        # Status Effects
         print("\nActive Status Effects:")
         has_status = False
         for k, v in self.status_effects.items():

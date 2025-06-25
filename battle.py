@@ -15,11 +15,10 @@ def battle(player, enemy):
             else:
                 if not handle_player_turn(player, enemy):
                     return
-            player.update()
         except Exception as e:
             print(f"Something went wrong during your turn: {e}")
-
-        print("-" * 40)
+        player.update()
+        print("]n")
 
         try:
             if enemy.health > 0:
@@ -27,23 +26,22 @@ def battle(player, enemy):
                     print(f"{enemy.name} is stunned and cannot act this turn!")
                 else:
                     handle_enemy_turn(enemy, player)
-                enemy.update()
         except Exception as e:
             print(f"Something went wrong during the enemy's turn: {e}")
 
+        enemy.update()
         print("-" * 40)
 
-    if player.health <= 0:
-        print(f"{player.name} has been defeated!")
-    elif enemy.health <= 0:
-        print(f"{enemy.name} has been defeated!")
+        input("Press Enter to continue to the next turn...")
+
+    print("\nBattle Over")
 
 
 def print_turn_header(player, enemy):
     """
-    Print a visual header at the beginning of each turn with current HP.
+    Print a visual header at the beginning of each turn.
     """
-    print("\n--- New Turn ---")
+    print("\n=== New Turn ===")
     print(f"{player.name}: {player.health} HP")
     print(f"{enemy.name}: {enemy.health} HP\n")
 

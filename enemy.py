@@ -18,17 +18,17 @@ class EvilWizard(Character):
             - shadow_veil: Temporarily boost evasion.
         """
         abilities = {
-            "shadow_veil": {"cooldown": 3, "desc": "Evasion +50% for 2 turns"},
-            "dark_bolt": {"cooldown": 2, "desc": "Deals magic damage"},
+            "shadow_veil": {"cooldown": 5, "desc": "Evasion +50% for 2 turns"},
+            "dark_bolt": {"cooldown": 3, "desc": "Deals magic damage"},
             "drain_life": {"cooldown": 3, "desc": "Steals life"},
-            "curse": {"cooldown": 4, "desc": "Reduces target attack by 10"},
+            "curse": {"cooldown": 5, "desc": "Reduces target attack by 10"},
         }
 
         super().__init__(
             name,
             health=150,
             attack_power=15,
-            defense=10,
+            defense=5,
             evasion_chance=0.25,
             abilities=abilities,
         )
@@ -41,6 +41,8 @@ class EvilWizard(Character):
         """
         Special: Fires a bolt of dark magic for base attack +10 damage.
         """
+        if target.try_evade(self.name):
+            return
 
         damage = self.attack_power + 10
         print(f"{self.name} casts Dark Bolt on {target.name} for {damage} damage.")
@@ -50,8 +52,10 @@ class EvilWizard(Character):
 
     def drain_life(self, target):
         """
-        Special: Deals 20 damage to the opponent and heals self for half.
+        Special: Deals 15 damage to the opponent and heals self for half.
         """
+        if target.try_evade(self.name):
+            return
 
         damage = 20
         heal = damage // 2
@@ -65,6 +69,8 @@ class EvilWizard(Character):
         """
         Special: Reduces the target's attack power by 10 points for 3 turns.
         """
+        if target.try_evade(self.name):
+            return
 
         reduction = 10
         target.status_effects["weakened"] = (reduction, 4)

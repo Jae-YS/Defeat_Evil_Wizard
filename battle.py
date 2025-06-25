@@ -18,7 +18,7 @@ def battle(player, enemy):
         except Exception as e:
             print(f"Something went wrong during your turn: {e}")
         player.update()
-        print("]n")
+        print("\n")
 
         try:
             if enemy.health > 0:
@@ -35,6 +35,10 @@ def battle(player, enemy):
         input("Press Enter to continue to the next turn...")
 
     print("\nBattle Over")
+    if player.health <= 0:
+        print(f"{player.name} has been defeated!")
+    elif enemy.health <= 0:
+        print(f"{enemy.name} has been defeated!")
 
 
 def print_turn_header(player, enemy):

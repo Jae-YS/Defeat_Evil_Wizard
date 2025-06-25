@@ -49,16 +49,16 @@ class Warrior(Character):
         health_ratio = self.health / self.max_health
 
         if not self.raging and health_ratio < 0.3:
-            self.status_effects["empowered"] = (10, -1)  # permanent while below 30%
-            self.status_effects["shielded"] = (5, -1)
+            self.apply_status("empowered", 10, -1)  # permanent while below 30%
+            self.apply_status("shielded", 5, -1)
             self.raging = True
             print(
                 f"{self.name} enters Berserker Rage! "
                 f"Attack Power: {self.get_effective_attack()}, Defense: {self.get_effective_defense()}"
             )
         elif self.raging and health_ratio >= 0.3:
-            self.status_effects["empowered"] = (0, 0)
-            self.status_effects["shielded"] = (0, 0)
+            self.apply_status("empowered", 0, 0)
+            self.apply_status("shielded", 0, 0)
             self.raging = False
             print(f"{self.name} calms down. Rage effect removed.")
 
@@ -103,7 +103,7 @@ class Mage(Character):
         print(f"{self.name} casts {spell}!")
 
         if spell == "Teleport":
-            self.status_effects["evade_boost"] = (1, 3)
+            self.apply_status("evade_boost", 1, 3)
             print(f"{self.name} teleports! +100% evasion for 2 turns.")
         elif spell == "Ice Shard":
             if opponent.try_evade(self.name):
@@ -115,10 +115,10 @@ class Mage(Character):
                 f"{self.name} hits {opponent.name} with Ice Shard for {damage} damage. Target is slowed for 3 turns."
             )
         elif spell == "Boost Attack":
-            self.status_effects["empowered"] = (7, 2)
+            self.apply_status("empowered", 7, 2)
             print(f"{self.name}'s attack power is boosted by 7 for 1 turn!")
         elif spell == "Boost Defense":
-            self.status_effects["shielded"] = (5, 2)
+            self.apply_status("shielded", 5, 2)
             print(f"{self.name}'s defense increases by 5 for 1 turn!")
 
 
@@ -166,7 +166,7 @@ class Archer(Character):
         Uses 'empowered' status effect.
         """
 
-        self.status_effects["empowered"] = (self.attack_power, 2)
+        self.apply_status("empowered", self.attack_power, 2)
         print(
             f"{self.name} is lining up a Headshot! Next attack will deal double damage."
         )
@@ -195,7 +195,7 @@ class Assassin(Character):
         Special: Empowers next attack (1.5x) and disables enemy evasion for 1 turn.
         """
 
-        self.status_effects["empowered"] = (self.attack_power * 0.5, 2)
+        self.apply_status("empowered", self.attack_power * 0.5, 2)
         opponent.status_effects["evade_boost"] = (0, 2)  # Removes evasion
         print(
             f"{self.name} uses Shadow Step! Next attack is empowered and unavoidable."
@@ -207,5 +207,5 @@ class Assassin(Character):
         Useful defensively.
         """
 
-        self.status_effects["evade_boost"] = (0.75, 3)
+        self.apply_status("evade_boost", 0.75, 3)
         print(f"{self.name} uses Smoke Bomb! Evasion increased to 75% for 2 turns.")

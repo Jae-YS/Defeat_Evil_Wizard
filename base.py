@@ -5,9 +5,21 @@ class Character:
     """
     Base class for all character types in the RPG.
     Manages core attributes like health, attack, defense, evasion, abilities, and status effects.
+    Supports buffs, debuffs, cooldowns, and turn-based updates.
     """
 
     def __init__(self, name, health, attack_power, defense, evasion_chance, abilities):
+        """
+        Initialize a character with core stats and abilities.
+
+        Args:
+            name (str): Character's name.
+            health (int): Starting and maximum health.
+            attack_power (int): Base attack value.
+            defense (int): Base defense value.
+            evasion_chance (float): Base evasion chance (0.0 to 1.0).
+            abilities (dict): Ability names mapped to cooldowns and descriptions.
+        """
         self.name = name
         self.health = health
         self.attack_power = attack_power
@@ -30,16 +42,16 @@ class Character:
         self.cooldowns = {name: 0 for name in abilities}
 
     def has_status(self, status_name):
-        """Check if a status is currently active (duration > 0)."""
+        """Return True if a status is currently active (duration > 0)."""
         effect = self.status_effects.get(status_name)
         return effect > 0 if isinstance(effect, int) else effect[1] > 0
 
     def apply_status(self, name, value, duration):
-        """Apply a status effect with a specific value and duration."""
+        """Apply a status effect with a value and duration."""
         self.status_effects[name] = (value, duration)
 
     def try_evade(self, attacker_name=""):
-        """Determine if this character evades an attack."""
+        """Returns True if the character evades the incoming attack."""
         if random.random() < self.get_effective_evasion():
             attacker_str = f"{attacker_name}'s " if attacker_name else ""
             print(f"{self.name} evaded {attacker_str}attack!")
@@ -47,12 +59,12 @@ class Character:
         return False
 
     def get_effective_attack(self):
+        """Return current attack power including random roll and status effects."""
         base = self.attack_power
         if self.cached_attack_roll is None:
             self.cached_attack_roll = random.randint(base, base + 5)
 
         atk = self.cached_attack_roll
-
         if self.has_status("empowered"):
             atk += self.status_effects["empowered"][0]
         if self.has_status("weakened"):
@@ -60,6 +72,7 @@ class Character:
         return max(1, atk)
 
     def get_effective_defense(self):
+        """Return current defense stat after buffs/debuffs."""
         defn = self.defense
         if self.has_status("shielded"):
             defn += self.status_effects["shielded"][0]
@@ -68,6 +81,7 @@ class Character:
         return max(0, defn)
 
     def get_effective_evasion(self):
+        """Return current evasion rate after buffs/debuffs."""
         eva = self.evasion_chance
         if self.has_status("evade_boost"):
             eva += self.status_effects["evade_boost"][0]
@@ -76,6 +90,10 @@ class Character:
         return max(0.0, min(1.0, eva))
 
     def attack(self, opponent):
+        """
+        Perform an attack against the opponent.
+        Takes evasion and attack/defense modifiers into account.
+        """
         if opponent.try_evade(self.name):
             self.cached_attack_roll = None
             return
@@ -89,9 +107,19 @@ class Character:
             print(f"{opponent.name} has been defeated!")
 
     def is_ability_ready(self, ability):
+        """Return True if the specified ability is off cooldown."""
         return self.cooldowns.get(ability, 0) == 0
 
     def use_ability(self, ability_name):
+        """
+        Trigger an ability if it is ready, and start its cooldown.
+
+        Args:
+            ability_name (str): The name of the ability to use.
+
+        Returns:
+            bool: Whether the ability was successfully activated.
+        """
         cd = self.abilities[ability_name]["cooldown"]
         if self.is_ability_ready(ability_name):
             self.cooldowns[ability_name] = cd
@@ -99,6 +127,13 @@ class Character:
         return False
 
     def special(self, index, target):
+        """
+        Execute the special ability by index from the ability list.
+
+        Args:
+            index (int): Index of the ability (0-based).
+            target (Character): The target to use the ability on.
+        """
         abilities = list(self.abilities.keys())
         if not 0 <= index < len(abilities):
             print("Invalid ability choice.")
@@ -115,6 +150,7 @@ class Character:
             print(f"{ability} is not implemented.")
 
     def heal(self):
+        """Restore 10 HP, not exceeding maximum health."""
         amount = 10
         if self.health < self.max_health:
             self.health = min(self.max_health, self.health + amount)
@@ -123,6 +159,10 @@ class Character:
             print(f"{self.name} is already at full health!")
 
     def update(self):
+        """
+        Update status effect durations and cooldowns.
+        Call this at the end of the character's turn.
+        """
         for k, v in self.status_effects.items():
             if isinstance(v, tuple):
                 value, duration = v
@@ -139,6 +179,7 @@ class Character:
                 self.cooldowns[k] -= 1
 
     def display_stats(self):
+        """Print the character's current stats and active status effects."""
         print(f"{self.name}'s Stats\n" + "-" * 40)
 
         if self.cached_attack_roll is None:
@@ -185,6 +226,7 @@ class Character:
             print(" - None")
 
     def view_special_abilities(self):
+        """Print a summary of available special abilities and their cooldowns."""
         print(f"{self.name}'s Special Abilities:")
         for i, (name, info) in enumerate(self.abilities.items(), 1):
             cd = info["cooldown"]
